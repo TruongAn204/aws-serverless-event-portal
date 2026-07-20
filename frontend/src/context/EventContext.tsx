@@ -79,6 +79,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { token, user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [mockWaitlists, setMockWaitlists] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -371,6 +372,24 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const joinEventWaitlist = async (eventId: string): Promise<void> => {
     setError(null);
+    if (FORCE_MOCK_DATA || (!API_BASE_URL && ALLOW_MOCK_FALLBACK)) {
+      setMockWaitlists(prev => {
+        const current = prev[eventId] || [];
+        if (current.find(entry => entry.email === user?.email)) return prev;
+        return {
+          ...prev,
+          [eventId]: [...current, {
+            position: current.length + 1,
+            name: user?.name || 'Mock User',
+            email: user?.email || 'mock@example.com',
+            userId: user?.id || 'mock-user-id',
+            registeredAt: new Date().toISOString()
+          }]
+        };
+      });
+      return;
+    }
+    
     if (!API_BASE_URL) {
       throw new Error('Chưa cấu hình API endpoint.');
     }
@@ -526,6 +545,10 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const getEventWaitlist = async (eventId: string): Promise<any[]> => {
+    if (FORCE_MOCK_DATA || (!API_BASE_URL && ALLOW_MOCK_FALLBACK)) {
+       return mockWaitlists[eventId] || [];
+    }
+    
     if (!API_BASE_URL) return [];
     try {
       const res = await fetch(`${API_BASE_URL}/events/${eventId}/waitlist`, {

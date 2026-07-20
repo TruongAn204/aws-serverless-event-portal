@@ -23,6 +23,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       position: index + 1,
       name: entry.userEmail ? entry.userEmail.split('@')[0] : `User ${entry.userId.slice(-4)}`,
       email: entry.userEmail || 'Ẩn danh',
+      userId: entry.userId,
       registeredAt: entry.joinedAt || new Date(entry.timestamp).toISOString()
     }));
 

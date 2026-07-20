@@ -78,6 +78,7 @@ const AppContent: React.FC = () => {
   const [detailEvent, setDetailEvent] = useState<Event | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [regTicket, setRegTicket] = useState<Registration | null>(null);
+  const [isWaitlisted, setIsWaitlisted] = useState<boolean>(false);
   const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
 
   useEffect(() => {
@@ -162,6 +163,21 @@ const AppContent: React.FC = () => {
     const nextEvent = await getEventById(id);
     setDetailEvent(nextEvent);
     setRegTicket(user ? registrations.find((registration) => registration.eventId === id) || null : null);
+    
+    let userInWaitlist = false;
+    if (user && nextEvent && nextEvent.registeredCount >= nextEvent.totalSeats) {
+        try {
+            const waitlist = await getEventWaitlist(id);
+            userInWaitlist = waitlist.some((entry: any) => 
+               (entry.userId && user.id && entry.userId === user.id) ||
+               (entry.email && user.email && entry.email.toLowerCase() === user.email.toLowerCase())
+            );
+        } catch (e) {
+            // ignore
+        }
+    }
+    setIsWaitlisted(userInWaitlist);
+    
     setDetailLoading(false);
   };
 
@@ -217,6 +233,7 @@ const AppContent: React.FC = () => {
         setRegTicket(promoted);
         alert('Có vé trống! Bạn đã được tự động đặt vé thành công.');
       } else {
+        setIsWaitlisted(true);
         alert('Bạn đã tham gia danh sách chờ thành công. Chúng tôi sẽ liên hệ khi có vé trống.');
       }
       setCurrentPage('detail');
@@ -486,9 +503,15 @@ const AppContent: React.FC = () => {
                         <h3>Đăng ký tham gia</h3>
                         <p className="text-secondary" style={{ margin: '8px 0 25px' }}>Nhận vé điện tử miễn phí cho sự kiện này.</p>
                         {detailEvent.registeredCount >= detailEvent.totalSeats ? (
-                          <button className="btn-primary w-full" style={{ justifyContent: 'center' }} onClick={() => setCurrentPage('waitlist')}>
-                            Tham gia danh sách chờ
-                          </button>
+                          isWaitlisted ? (
+                            <button className="btn-secondary w-full" style={{ justifyContent: 'center', pointerEvents: 'none', borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+                              Bạn đã tham gia danh sách chờ
+                            </button>
+                          ) : (
+                            <button className="btn-primary w-full" style={{ justifyContent: 'center' }} onClick={() => setCurrentPage('waitlist')}>
+                              Tham gia danh sách chờ
+                            </button>
+                          )
                         ) : (
                           <button className="btn-primary w-full" style={{ justifyContent: 'center' }} onClick={() => handleRegisterEvent(detailEvent.id)}>
                             Đăng ký vé
