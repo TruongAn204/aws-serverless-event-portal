@@ -31,12 +31,22 @@ const poolData = {
   UserPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || '',
   ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID || ''
 };
+const isValidUserPoolId = /^[-\w]+_[0-9a-zA-Z]+$/.test(poolData.UserPoolId.trim());
+const isValidClientId = /^[0-9a-z]+$/i.test(poolData.ClientId.trim());
 const useMockAuth =
   import.meta.env.VITE_AUTH_MODE === 'mock' ||
   import.meta.env.VITE_USE_MOCK_AUTH === 'true' ||
   !poolData.UserPoolId ||
-  !poolData.ClientId;
-const userPool = useMockAuth ? null : new CognitoUserPool(poolData);
+  !poolData.ClientId ||
+  !isValidUserPoolId ||
+  !isValidClientId;
+const userPool = useMockAuth ? null : new CognitoUserPool({
+  UserPoolId: poolData.UserPoolId.trim(),
+  ClientId: poolData.ClientId.trim()
+});
+const authConfigError = !useMockAuth && (!isValidUserPoolId || !isValidClientId)
+  ? 'Cấu hình Cognito không hợp lệ. Kiểm tra lại VITE_COGNITO_USER_POOL_ID và VITE_COGNITO_CLIENT_ID.'
+  : null;
 const MOCK_USER_KEY = 'eventPortal.mockUser';
 const MOCK_TOKEN_KEY = 'eventPortal.mockToken';
 
@@ -62,6 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (authConfigError) {
+      console.error(authConfigError);
+    }
+  }, []);
 
   const fetchUserProfile = async (tokenStr: string): Promise<any> => {
     const API_BASE_URL = import.meta.env.VITE_API_ENDPOINT || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
@@ -177,6 +193,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (authConfigError) {
+      setLoading(false);
+      throw new Error(authConfigError);
+    }
+
     if (!userPool) {
       setLoading(false);
       throw new Error('Cognito chưa được cấu hình');
@@ -239,6 +260,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (authConfigError) {
+      setLoading(false);
+      throw new Error(authConfigError);
+    }
+
     if (!userPool) {
       setLoading(false);
       throw new Error('Cognito chưa được cấu hình');
@@ -288,6 +314,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (authConfigError) {
+      setLoading(false);
+      throw new Error(authConfigError);
+    }
+
     if (!userPool) {
       setLoading(false);
       throw new Error('Cognito chưa được cấu hình');
@@ -317,6 +348,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 800));
       setLoading(false);
       return;
+    }
+
+    if (authConfigError) {
+      setLoading(false);
+      throw new Error(authConfigError);
     }
 
     if (!userPool) {
@@ -432,7 +468,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteAccount,
       refreshUserProfile
     }}>
-      {children}
+      {authConfigError && !useMockAuth ? (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          background: '#0b1020',
+          color: '#f8fafc',
+          textAlign: 'center'
+        }}>
+          <div style={{ maxWidth: '720px' }}>
+            <h1>Frontend đang thiếu cấu hình Cognito hợp lệ</h1>
+            <p style={{ marginTop: '12px', color: '#cbd5e1' }}>{authConfigError}</p>
+            <p style={{ marginTop: '8px', color: '#cbd5e1' }}>
+              Hãy kiểm tra lại repository secrets trên GitHub Pages, đặc biệt là giá trị User Pool ID phải có dạng <strong>ap-southeast-1_xxxxxxxx</strong>.
+            </p>
+          </div>
+        </div>
+        ) : (
+          <>{children}</>
+      )}
     </AuthContext.Provider>
   );
 };
