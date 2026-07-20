@@ -120,5 +120,7 @@ Hệ thống hỗ trợ triển khai hoàn toàn tự động lên AWS chỉ tro
 4. **[03-Trien-Khai-Frontend.md](./huong%20dan%20cau%20hinh/03-Trien-Khai-Frontend.md):** Đẩy code Frontend tĩnh lên Amazon S3 Bucket.
 5. **[04-Don-Dep-Tai-Nguyen.md](./huong%20dan%20cau%20hinh/04-Don-Dep-Tai-Nguyen.md):** Hướng dẫn xóa sạch các dịch vụ AWS sau khi test để tránh phát sinh chi phí.
 
+> Nếu bạn deploy frontend lên GitHub Pages thay vì S3, hãy cấu hình các repository secrets `VITE_API_ENDPOINT`, `VITE_COGNITO_USER_POOL_ID`, và `VITE_COGNITO_CLIENT_ID`. Workflow Pages hiện sẽ build theo chế độ Cognito thật; nếu thiếu secrets, job sẽ dừng để tránh rơi về mock và làm OTP không gửi email.
+
 ---
 *Tài liệu được biên soạn dựa trên tiêu chuẩn kiến trúc BMAD Method v6 (Breakthrough Method for Agile AI-Driven Development).*
