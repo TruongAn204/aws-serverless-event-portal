@@ -196,7 +196,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
 
         setRegistrations(prev => [...prev, nextRegistration]);
-        if (user) {
+        if (user && API_BASE_URL && !FORCE_MOCK_DATA) {
           void fetchUserRegistrations();
         }
 
